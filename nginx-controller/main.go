@@ -52,10 +52,13 @@ func main() {
 		}
 	}
 
+	glog.V(3).Info("Api client created")
 	ngxc, _ := nginx.NewNginxController("/etc/nginx/", local)
+	glog.V(3).Info("Starting Nginx")
 	ngxc.Start()
 	config := nginx.NewDefaultConfig()
 	cnf := nginx.NewConfigurator(ngxc, config)
 	lbc, _ := controller.NewLoadBalancerController(kubeClient, 30*time.Second, *watchNamespace, cnf, *nginxConfigMaps)
+	glog.V(3).Info("Run load balancer controller")
 	lbc.Run()
 }

@@ -178,7 +178,7 @@ func (nginx *NginxController) templateIt(config IngressNginxConfig, filename str
 func (nginx *NginxController) Reload() error {
 	if !nginx.local {
 		if err := shellOut("nginx -t"); err != nil {
-			return fmt.Errorf("Invalid nginx configuration detected, not reloading", err)
+			return fmt.Errorf("Invalid nginx configuration detected, not reloading: %s", err)
 		}
 		if err := shellOut("nginx -s reload"); err != nil {
 			return fmt.Errorf("nginx -s failed: %s", err)
@@ -193,7 +193,7 @@ func (nginx *NginxController) Reload() error {
 func (nginx *NginxController) Start() {
 	if !nginx.local {
 		if err := shellOut("nginx"); err != nil {
-			glog.Fatalf("Failed to start nginx")
+			glog.Fatalf("Failed to start nginx: %s", err)
 		}
 	} else {
 		glog.V(3).Info("Starting nginx")
@@ -201,8 +201,10 @@ func (nginx *NginxController) Start() {
 }
 
 func (nginx *NginxController) createCertsDir() {
-	if err := os.Mkdir(nginx.nginxCertsPath, os.ModeDir); err != nil {
-		glog.Fatalf("Couldn't create directory %v: %v", nginx.nginxCertsPath, err)
+	if _, err := os.Stat(nginx.nginxCertsPath); os.IsNotExist(err) {
+		if err := os.Mkdir(nginx.nginxCertsPath, os.ModeDir); err != nil {
+			glog.Fatalf("Couldn't create directory %v: %v", nginx.nginxCertsPath, err)
+		}
 	}
 }
 
