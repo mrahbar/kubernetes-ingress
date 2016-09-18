@@ -13,14 +13,9 @@ import (
 )
 
 var (
-	proxyURL = flag.String("proxy", "",
-		`If specified, the controller assumes a kubctl proxy server is running on the
-		given url and creates a proxy client. Regenerated NGINX configuration files
-    are not written to the disk, instead they are printed to stdout. Also NGINX
-    is not getting invoked. This flag is for testing.`)
-
-	proxyToken = flag.String("token", "",
-		`Auth token for accessing apiserver.`)
+	masterURL = flag.String("master", "", `Specify the url of the api server.`)
+	masterToken = flag.String("token", "", `Auth token for accessing apiserver.`)
+	masterCaFile = flag.String("root-ca-file", "", `Path to root ca file.`)
 
 	watchNamespace = flag.String("watch-namespace", api.NamespaceAll,
 		`Namespace to watch for Ingress/Services/Endpoints. By default the controller
@@ -37,11 +32,16 @@ func main() {
 	var kubeClient *client.Client
 	var local = false
 
-	if *proxyURL != "" {
+	if *masterURL != "" {
+		var tlsConfig = &client.TLSClientConfig{
+			CAFile: *masterCaFile,
+		}
+
 		kubeClient = client.NewOrDie(&client.Config{
-			Host: *proxyURL,
-			BearerToken: *proxyToken,
-			Insecure:true,
+			Host: *masterURL,
+			BearerToken: *masterToken,
+			Insecure:false,
+			TLSClientConfig: tlsConfig,
 		})
 		// local = true
 	} else {
