@@ -1,6 +1,6 @@
 # NGINX Ingress Controller
 
-This is an implementation of a Kubernetes Ingress controller for NGINX, which provides HTTP load balancing for applications your deploy in your Kubernetes cluster. You can find more details on what an Ingress controller is on the [main page](https://github.com/nginxinc/kubernetes-ingress).
+This is an implementation of a Kubernetes Ingress controller for NGINX, which provides HTTP load balancing for applications your deploy in your Kubernetes cluster. You can find more details on what an Ingress controller is on the [main page](https://github.com/mrahbar/kubernetes-ingress).
 
 ## How to Use the Controller
 
