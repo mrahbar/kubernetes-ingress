@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="GOPATH &lt;kubernetes-ingress&gt;">
+    <CLASSES>
+      <root url="file://C:/Go/home/src/github.com" />
+      <root url="file://C:/Go/home/src/gopkg.in" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://C:/Go/home/src/github.com" />
+      <root url="file://C:/Go/home/src/gopkg.in" />
+    </SOURCES>
+    <excluded>
+      <root url="file://$PROJECT_DIR$" />
+    </excluded>
+  </library>
+</component>

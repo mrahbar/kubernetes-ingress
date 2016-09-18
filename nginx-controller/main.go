@@ -33,15 +33,13 @@ func main() {
 	var local = false
 
 	if *masterURL != "" {
-		var tlsConfig = &client.TLSClientConfig{
-			CAFile: *masterCaFile,
-		}
-
 		kubeClient = client.NewOrDie(&client.Config{
 			Host: *masterURL,
 			BearerToken: *masterToken,
 			Insecure:false,
-			TLSClientConfig: tlsConfig,
+			TLSClientConfig: client.TLSClientConfig{
+				CAFile: *masterCaFile,
+			},
 		})
 		// local = true
 	} else {
