@@ -10,11 +10,6 @@ import (
 	"github.com/nginxinc/kubernetes-ingress/nginx-controller/nginx"
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
-
-	"k8s.io/client-go/1.4/kubernetes"
-	clientapi "k8s.io/client-go/1.4/pkg/api"
-	"k8s.io/client-go/1.4/tools/clientcmd"
-	"fmt"
 )
 
 var (
@@ -24,9 +19,8 @@ var (
     are not written to the disk, instead they are printed to stdout. Also NGINX
     is not getting invoked. This flag is for testing.`)
 
-	kubeConfigPath = flag.String("kubeconfig", "",
-		`The nginx controller can use the same kubeconfig file as the
-		kubectl CLI does to interact with the apiserver.`)
+	proxyToken = flag.String("token", "",
+		`Auth token for accessing apiserver.`)
 
 	watchNamespace = flag.String("watch-namespace", api.NamespaceAll,
 		`Namespace to watch for Ingress/Services/Endpoints. By default the controller
@@ -43,34 +37,18 @@ func main() {
 	var kubeClient *client.Client
 	var local = false
 
-	if *kubeConfigPath != "" {
-		// uses the current context in kubeconfig
-		config, err := clientcmd.BuildConfigFromFlags("", *kubeConfigPath)
-		if err != nil {
-			panic(err.Error())
-		}
-		// creates the clientset
-		clientset, err := kubernetes.NewForConfig(config)
-		if err != nil {
-			panic(err.Error())
-		}
-		pods, err := clientset.Core().Pods("").List(clientapi.ListOptions{})
-		if err != nil {
-			panic(err.Error())
-		}
-		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+	if *proxyURL != "" {
+		kubeClient = client.NewOrDie(&client.Config{
+			Host: *proxyURL,
+			BearerToken: *proxyToken,
+			Insecure:true,
+		})
+		// local = true
 	} else {
-		if *proxyURL != "" {
-			kubeClient = client.NewOrDie(&client.Config{
-				Host: *proxyURL,
-			})
-			local = true
-		} else {
-			var err error
-			kubeClient, err = client.NewInCluster()
-			if err != nil {
-				glog.Fatalf("Failed to create client: %v.", err)
-			}
+		var err error
+		kubeClient, err = client.NewInCluster()
+		if err != nil {
+			glog.Fatalf("Failed to create client: %v.", err)
 		}
 	}
 
