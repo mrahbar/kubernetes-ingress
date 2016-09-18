@@ -12,7 +12,7 @@ import (
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 
 	"k8s.io/client-go/1.4/kubernetes"
-	"k8s.io/client-go/1.4/pkg/api"
+	clientapi "k8s.io/client-go/1.4/pkg/api"
 	"k8s.io/client-go/1.4/tools/clientcmd"
 	"fmt"
 )
@@ -54,7 +54,7 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
-		pods, err := clientset.Core().Pods("").List(api.ListOptions{})
+		pods, err := clientset.Core().Pods("").List(clientapi.ListOptions{})
 		if err != nil {
 			panic(err.Error())
 		}
