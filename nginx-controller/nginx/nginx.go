@@ -16,7 +16,6 @@ import (
 type NginxController struct {
 	nginxConfdPath string
 	nginxCertsPath string
-	local          bool
 	templatePath   string
 }
 
@@ -74,16 +73,14 @@ func NewUpstreamWithDefaultServer(name string) Upstream {
 }
 
 // NewNginxController creates a NGINX controller
-func NewNginxController(nginxConfPath string, local bool) (*NginxController, error) {
+func NewNginxController(nginxConfPath string, templatePath string) (*NginxController, error) {
 	ngxc := NginxController{
 		nginxConfdPath: path.Join(nginxConfPath, "conf.d"),
 		nginxCertsPath: path.Join(nginxConfPath, "ssl"),
-		local:          local,
+		templatePath:          templatePath,
 	}
 
-	if !local {
-		ngxc.createCertsDir()
-	}
+	ngxc.createCertsDir()
 
 	cfg := &NginxMainConfig{ServerNamesHashMaxSize: NewDefaultConfig().MainServerNamesHashMaxSize}
 	ngxc.UpdateMainConfigFile(cfg)
@@ -97,10 +94,8 @@ func (nginx *NginxController) DeleteIngress(name string) {
 	filename := nginx.getIngressNginxConfigFileName(name)
 	glog.V(3).Infof("deleting %v", filename)
 
-	if !nginx.local {
-		if err := os.Remove(filename); err != nil {
-			glog.Warningf("Failed to delete %v: %v", filename, err)
-		}
+	if err := os.Remove(filename); err != nil {
+		glog.Warningf("Failed to delete %v: %v", filename, err)
 	}
 }
 
@@ -117,27 +112,25 @@ func (nginx *NginxController) AddOrUpdateIngress(name string, config IngressNgin
 func (nginx *NginxController) AddOrUpdateCertAndKey(name string, cert string, key string) string {
 	pemFileName := nginx.nginxCertsPath + "/" + name + ".pem"
 
-	if !nginx.local {
-		pem, err := os.Create(pemFileName)
-		if err != nil {
-			glog.Fatalf("Couldn't create pem file %v: %v", pemFileName, err)
-		}
-		defer pem.Close()
+	pem, err := os.Create(pemFileName)
+	if err != nil {
+		glog.Fatalf("Couldn't create pem file %v: %v", pemFileName, err)
+	}
+	defer pem.Close()
 
-		_, err = pem.WriteString(key)
-		if err != nil {
-			glog.Fatalf("Couldn't write to pem file %v: %v", pemFileName, err)
-		}
+	_, err = pem.WriteString(key)
+	if err != nil {
+		glog.Fatalf("Couldn't write to pem file %v: %v", pemFileName, err)
+	}
 
-		_, err = pem.WriteString("\n")
-		if err != nil {
-			glog.Fatalf("Couldn't write to pem file %v: %v", pemFileName, err)
-		}
+	_, err = pem.WriteString("\n")
+	if err != nil {
+		glog.Fatalf("Couldn't write to pem file %v: %v", pemFileName, err)
+	}
 
-		_, err = pem.WriteString(cert)
-		if err != nil {
-			glog.Fatalf("Couldn't write to pem file %v: %v", pemFileName, err)
-		}
+	_, err = pem.WriteString(cert)
+	if err != nil {
+		glog.Fatalf("Couldn't write to pem file %v: %v", pemFileName, err)
 	}
 
 	return pemFileName
@@ -160,18 +153,14 @@ func (nginx *NginxController) templateIt(config IngressNginxConfig, filename str
 		tmpl.Execute(os.Stdout, config)
 	}
 
-	if !nginx.local {
-		w, err := os.Create(filename)
-		if err != nil {
-			glog.Fatalf("Failed to open %v: %v", filename, err)
-		}
-		defer w.Close()
+	w, err := os.Create(filename)
+	if err != nil {
+		glog.Fatalf("Failed to open %v: %v", filename, err)
+	}
+	defer w.Close()
 
-		if err := tmpl.Execute(w, config); err != nil {
-			glog.Fatalf("Failed to write template %v", err)
-		}
-	} else {
-		// print conf to stdout here
+	if err := tmpl.Execute(w, config); err != nil {
+		glog.Fatalf("Failed to write template %v", err)
 	}
 
 	glog.V(3).Infof("NGINX configuration file had been updated")
@@ -179,27 +168,23 @@ func (nginx *NginxController) templateIt(config IngressNginxConfig, filename str
 
 // Reload reloads NGINX
 func (nginx *NginxController) Reload() error {
-	if !nginx.local {
-		if err := shellOut("nginx -t"); err != nil {
-			return fmt.Errorf("Invalid nginx configuration detected, not reloading: %s", err)
-		}
-		if err := shellOut("nginx -s reload"); err != nil {
-			return fmt.Errorf("nginx -s failed: %s", err)
-		}
-	} else {
-		glog.V(3).Info("Reloading nginx")
+	glog.V(3).Info("Reloading nginx")
+
+	if err := shellOut("nginx -t"); err != nil {
+		return fmt.Errorf("Invalid nginx configuration detected, not reloading: %s", err)
 	}
+	if err := shellOut("nginx -s reload"); err != nil {
+		return fmt.Errorf("nginx -s failed: %s", err)
+	}
+
 	return nil
 }
 
 // Start starts NGINX
 func (nginx *NginxController) Start() {
-	if !nginx.local {
-		if err := shellOut("nginx"); err != nil {
-			glog.Fatalf("Failed to start nginx: %s", err)
-		}
-	} else {
-		glog.V(3).Info("Starting nginx")
+	glog.V(3).Info("Starting nginx")
+	if err := shellOut("nginx"); err != nil {
+		glog.Fatalf("Failed to start nginx: %s", err)
 	}
 }
 
@@ -249,16 +234,14 @@ func (nginx *NginxController) UpdateMainConfigFile(cfg *NginxMainConfig) {
 		tmpl.Execute(os.Stdout, cfg)
 	}
 
-	if !nginx.local {
-		w, err := os.Create(filename)
-		if err != nil {
-			glog.Fatalf("Failed to open %v: %v", filename, err)
-		}
-		defer w.Close()
+	w, err := os.Create(filename)
+	if err != nil {
+		glog.Fatalf("Failed to open %v: %v", filename, err)
+	}
+	defer w.Close()
 
-		if err := tmpl.Execute(w, cfg); err != nil {
-			glog.Fatalf("Failed to write template %v", err)
-		}
+	if err := tmpl.Execute(w, cfg); err != nil {
+		glog.Fatalf("Failed to write template %v", err)
 	}
 
 	glog.V(3).Infof("The main NGINX configuration file had been updated")

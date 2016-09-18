@@ -31,7 +31,6 @@ func main() {
 	flag.Parse()
 
 	var kubeClient *client.Client
-	var local = false
 
 	if *masterURL != "" {
 		kubeClient = client.NewOrDie(&client.Config{
@@ -42,7 +41,6 @@ func main() {
 				CAFile: *masterCaFile,
 			},
 		})
-		// local = true
 	} else {
 		var err error
 		kubeClient, err = client.NewInCluster()
@@ -52,7 +50,7 @@ func main() {
 	}
 
 	glog.V(3).Info("Api client created")
-	ngxc, _ := nginx.NewNginxController("/etc/nginx/", local, *templatePath)
+	ngxc, _ := nginx.NewNginxController("/etc/nginx/", *templatePath)
 	glog.V(3).Info("Starting Nginx")
 	ngxc.Start()
 	config := nginx.NewDefaultConfig()
