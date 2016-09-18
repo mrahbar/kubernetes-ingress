@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/golang/glog"
+	"path/filepath"
 )
 
 // NginxController Updates NGINX configuration, starts and reloads NGINX
@@ -16,6 +17,7 @@ type NginxController struct {
 	nginxConfdPath string
 	nginxCertsPath string
 	local          bool
+	templatePath   string
 }
 
 // IngressNginxConfig describes an NGINX configuration
@@ -146,7 +148,8 @@ func (nginx *NginxController) getIngressNginxConfigFileName(name string) string 
 }
 
 func (nginx *NginxController) templateIt(config IngressNginxConfig, filename string) {
-	tmpl, err := template.New("ingress.tmpl").ParseFiles("ingress.tmpl")
+	templatePath := filepath.Join(nginx.templatePath, "ingress.tmpl")
+	tmpl, err := template.New("ingress.tmpl").ParseFiles(templatePath)
 	if err != nil {
 		glog.Fatal("Failed to parse template file")
 	}
@@ -233,7 +236,8 @@ func shellOut(cmd string) (err error) {
 
 // UpdateMainConfigFile update the main NGINX configuration file
 func (nginx *NginxController) UpdateMainConfigFile(cfg *NginxMainConfig) {
-	tmpl, err := template.New("nginx.conf.tmpl").ParseFiles("nginx.conf.tmpl")
+	templatePath := filepath.Join(nginx.templatePath, "nginx.conf.tmpl")
+	tmpl, err := template.New("nginx.conf.tmpl").ParseFiles(templatePath)
 	if err != nil {
 		glog.Fatalf("Failed to parse the main config template file: %v", err)
 	}

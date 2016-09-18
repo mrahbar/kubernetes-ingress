@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/glog"
 
-	"github.com/nginxinc/kubernetes-ingress/nginx-controller/controller"
-	"github.com/nginxinc/kubernetes-ingress/nginx-controller/nginx"
+	"github.com/mrahbar/kubernetes-ingress/nginx-controller/controller"
+	"github.com/mrahbar/kubernetes-ingress/nginx-controller/nginx"
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -16,6 +16,7 @@ var (
 	masterURL = flag.String("master", "", `Specify the url of the api server.`)
 	masterToken = flag.String("token", "", `Auth token for accessing apiserver.`)
 	masterCaFile = flag.String("root-ca-file", "", `Path to root ca file.`)
+	templatePath = flag.String("template-path", ".", `Path to ingress.tmpl and nginx.conf.tmpl.`)
 
 	watchNamespace = flag.String("watch-namespace", api.NamespaceAll,
 		`Namespace to watch for Ingress/Services/Endpoints. By default the controller
@@ -51,7 +52,7 @@ func main() {
 	}
 
 	glog.V(3).Info("Api client created")
-	ngxc, _ := nginx.NewNginxController("/etc/nginx/", local)
+	ngxc, _ := nginx.NewNginxController("/etc/nginx/", local, *templatePath)
 	glog.V(3).Info("Starting Nginx")
 	ngxc.Start()
 	config := nginx.NewDefaultConfig()
