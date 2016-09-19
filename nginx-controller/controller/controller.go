@@ -132,8 +132,10 @@ func NewLoadBalancerController(kubeClient *client.Client, resyncPeriod time.Dura
 		},
 		UpdateFunc: func(old, cur interface{}) {
 			if !reflect.DeepEqual(old, cur) {
-				glog.V(3).Infof("Endpoints %v changed, syncing",
-					cur.(*api.Endpoints).Name)
+				name := cur.(*api.Endpoints).Name
+				if name != "kube-scheduler" || name != "kube-controller-manager" {
+					glog.V(3).Infof("Endpoints %v changed, syncing", name)
+				}
 				lbc.endpQueue.enqueue(cur)
 			}
 		},
@@ -254,10 +256,13 @@ func configMapsWatchFunc(c *client.Client, ns string) func(options api.ListOptio
 }
 
 func (lbc *LoadBalancerController) syncEndp(key string) {
-	glog.V(3).Infof("Syncing endpoints %v", key)
+	if key != "kube-system/kube-scheduler" || key != "kube-system/kube-controller-manager" {
+		glog.V(3).Infof("Syncing endpoints %v", key)
+	}
 
 	obj, endpExists, err := lbc.endpLister.Store.GetByKey(key)
 	if err != nil {
+		glog.V(3).Infof("Requeue endpoints %v due to error %s", key, err)
 		lbc.endpQueue.requeue(key, err)
 		return
 	}
@@ -271,6 +276,8 @@ func (lbc *LoadBalancerController) syncEndp(key string) {
 			name := ing.Namespace + "-" + ing.Name
 			lbc.cnf.UpdateEndpoints(name, &ingEx)
 		}
+	} else {
+		glog.V(3).Infof("Endpoints %v does not exists", key)
 	}
 
 }
@@ -363,6 +370,8 @@ func (lbc *LoadBalancerController) getIngressForEndpoints(obj interface{}) []ext
 	} else {
 		if svcExists {
 			ings = append(ings, lbc.getIngressesForService(svcObj.(*api.Service))...)
+		} else {
+			glog.V(3).Infof("Service %v does not exists", svcKey)
 		}
 	}
 	return ings

@@ -67,7 +67,9 @@ func (t *taskQueue) worker() {
 			close(t.workerDone)
 			return
 		}
-		glog.V(3).Infof("Syncing %v", key)
+		if key != "kube-system/kube-scheduler" || key != "kube-system/kube-controller-manager" {
+			glog.V(3).Infof("Syncing %v", key)
+		}
 		t.sync(key.(string))
 		t.queue.Done(key)
 	}
