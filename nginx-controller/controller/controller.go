@@ -277,7 +277,9 @@ func (lbc *LoadBalancerController) syncEndp(key string) {
 			lbc.cnf.UpdateEndpoints(name, &ingEx)
 		}
 	} else {
-		glog.V(3).Infof("Endpoints %v does not exists", key)
+		if key != "kube-system/kube-scheduler" && key != "kube-system/kube-controller-manager" {
+			glog.V(3).Infof("Endpoints %v does not exists", key)
+		}
 	}
 
 }
@@ -371,7 +373,9 @@ func (lbc *LoadBalancerController) getIngressForEndpoints(obj interface{}) []ext
 		if svcExists {
 			ings = append(ings, lbc.getIngressesForService(svcObj.(*api.Service))...)
 		} else {
-			glog.V(3).Infof("Service %v does not exists", svcKey)
+			if svcKey != "kube-system/kube-scheduler" && svcKey != "kube-system/kube-controller-manager" {
+				glog.V(3).Infof("Service %v does not exists", svcKey)
+			}
 		}
 	}
 	return ings
