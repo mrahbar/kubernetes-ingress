@@ -133,7 +133,7 @@ func NewLoadBalancerController(kubeClient *client.Client, resyncPeriod time.Dura
 		UpdateFunc: func(old, cur interface{}) {
 			if !reflect.DeepEqual(old, cur) {
 				name := cur.(*api.Endpoints).Name
-				if name != "kube-scheduler" || name != "kube-controller-manager" {
+				if name != "kube-scheduler" && name != "kube-controller-manager" {
 					glog.V(3).Infof("Endpoints %v changed, syncing", name)
 				}
 				lbc.endpQueue.enqueue(cur)
@@ -256,7 +256,7 @@ func configMapsWatchFunc(c *client.Client, ns string) func(options api.ListOptio
 }
 
 func (lbc *LoadBalancerController) syncEndp(key string) {
-	if key != "kube-system/kube-scheduler" || key != "kube-system/kube-controller-manager" {
+	if key != "kube-system/kube-scheduler" && key != "kube-system/kube-controller-manager" {
 		glog.V(3).Infof("Syncing endpoints %v", key)
 	}
 
