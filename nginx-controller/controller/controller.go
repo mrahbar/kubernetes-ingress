@@ -32,6 +32,7 @@ import (
 	"k8s.io/kubernetes/pkg/controller/framework"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/watch"
+	"encoding/json"
 )
 
 // LoadBalancerController watches Kubernetes API and
@@ -266,13 +267,15 @@ func (lbc *LoadBalancerController) syncEndp(key string) {
 		lbc.endpQueue.requeue(key, err)
 		return
 	}
+	glog.V(3).Infof("Retrieved Endpoint from store %v", json.Marshal(obj))
 
 	if endpExists {
 		ings := lbc.getIngressForEndpoints(obj)
 
+		glog.V(3).Infof("Retrieved Ingress for Endpoint %v: %v", key, json.Marshal(ings))
 		for _, ing := range ings {
 			ingEx := lbc.createIngress(&ing)
-			glog.V(3).Infof("Updating Endpoints for %v/%v", ing.Name, ing.Namespace)
+			glog.V(3).Infof("Updating Endpoints for %v/%v with Ingress: %v", ing.Namespace, ing.Name, json.Marshal(ingEx))
 			name := ing.Namespace + "-" + ing.Name
 			lbc.cnf.UpdateEndpoints(name, &ingEx)
 		}
@@ -368,7 +371,7 @@ func (lbc *LoadBalancerController) getIngressForEndpoints(obj interface{}) []ext
 	svcKey := endp.GetNamespace() + "/" + endp.GetName()
 	svcObj, svcExists, err := lbc.svcLister.Store.GetByKey(svcKey)
 	if err != nil {
-		glog.V(3).Infof("error getting service %v from the cache: %v\n", svcKey, err)
+		glog.V(3).Infof("error getting service %v from the cache: %v", svcKey, err)
 	} else {
 		if svcExists {
 			ings = append(ings, lbc.getIngressesForService(svcObj.(*api.Service))...)

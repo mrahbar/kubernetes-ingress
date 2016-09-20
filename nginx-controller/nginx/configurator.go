@@ -34,8 +34,10 @@ func (cnf *Configurator) AddOrUpdateIngress(name string, ingEx *IngressEx) {
 	cnf.lock.Lock()
 	defer cnf.lock.Unlock()
 
+	glog.V(3).Infof("AddOrUpdateIngress from IngressEx: \n%v", ingEx)
 	pems := cnf.updateCertificates(ingEx)
 	nginxCfg := cnf.generateNginxCfg(ingEx, pems)
+	glog.V(3).Infof("Generated IngressNginxConfig: \n%v", nginxCfg)
 	cnf.nginx.AddOrUpdateIngress(name, nginxCfg)
 	if err := cnf.nginx.Reload(); err != nil {
 		glog.Errorf("Error when adding or updating ingress %q: %q", name, err)
