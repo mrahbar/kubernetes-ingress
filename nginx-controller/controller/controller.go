@@ -258,7 +258,7 @@ func configMapsWatchFunc(c *client.Client, ns string) func(options api.ListOptio
 
 func (lbc *LoadBalancerController) syncEndp(key string) {
 	shouldLog := key != "kube-system/kube-scheduler" && key != "kube-system/kube-controller-manager"
-	
+
 	if shouldLog {
 		glog.V(3).Infof("Syncing endpoints %v", key)
 	}
@@ -279,13 +279,13 @@ func (lbc *LoadBalancerController) syncEndp(key string) {
 		ings := lbc.getIngressForEndpoints(obj)
 
 		if shouldLog {
-			out, _ := json.Marshal(obj)
+			out, _ := json.Marshal(ings)
 			glog.V(3).Infof("Retrieved Ingress for Endpoint %v: %v", key, string(out))
 		}
 		for _, ing := range ings {
 			ingEx := lbc.createIngress(&ing)
 			if shouldLog {
-				out, _ := json.Marshal(obj)
+				out, _ := json.Marshal(ingEx)
 				glog.V(3).Infof("Updating Endpoints for %v/%v with Ingress: %v", ing.Namespace, ing.Name, string(out))
 			}
 			name := ing.Namespace + "-" + ing.Name
@@ -337,7 +337,7 @@ func (lbc *LoadBalancerController) syncCfgm(key string) {
 }
 
 func (lbc *LoadBalancerController) syncIng(key string) {
-	glog.V(3).Infof("Syncing %v", key)
+	glog.V(3).Infof("Syncing Ingress %v", key)
 
 	obj, ingExists, err := lbc.ingLister.Store.GetByKey(key)
 	if err != nil {
@@ -345,7 +345,9 @@ func (lbc *LoadBalancerController) syncIng(key string) {
 		return
 	}
 
-	// defaut/some-ingress -> default-some-ingress
+	out, _ := json.Marshal(obj)
+	glog.V(3).Infof("Retrieved Ingress from store %v", string(out))
+	// default/some-ingress -> default-some-ingress
 	name := strings.Replace(key, "/", "-", -1)
 
 	if !ingExists {
@@ -356,6 +358,11 @@ func (lbc *LoadBalancerController) syncIng(key string) {
 
 		ing := obj.(*extensions.Ingress)
 		ingEx := lbc.createIngress(ing)
+
+		out, _ := json.Marshal(ingEx)
+		glog.V(3).Infof("Updating Ingress for %v/%v: %v", ing.Namespace, ing.Name, string(out))
+		glog.V(3).Infof("Updating Ingress for (2) %v/%v: %+v", ing.Namespace, ing.Name, ingEx)
+
 		lbc.cnf.AddOrUpdateIngress(name, &ingEx)
 	}
 }
