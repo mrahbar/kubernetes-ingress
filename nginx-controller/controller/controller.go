@@ -257,7 +257,9 @@ func configMapsWatchFunc(c *client.Client, ns string) func(options api.ListOptio
 }
 
 func (lbc *LoadBalancerController) syncEndp(key string) {
-	if key != "kube-system/kube-scheduler" && key != "kube-system/kube-controller-manager" {
+	shouldLog := key != "kube-system/kube-scheduler" && key != "kube-system/kube-controller-manager"
+	
+	if shouldLog {
 		glog.V(3).Infof("Syncing endpoints %v", key)
 	}
 
@@ -268,23 +270,29 @@ func (lbc *LoadBalancerController) syncEndp(key string) {
 		return
 	}
 
-	out, _ := json.Marshal(obj)
-	glog.V(3).Infof("Retrieved Endpoint from store %v", string(out))
+	if shouldLog {
+		out, _ := json.Marshal(obj)
+		glog.V(3).Infof("Retrieved Endpoint from store %v", string(out))
+	}
 
 	if endpExists {
 		ings := lbc.getIngressForEndpoints(obj)
 
-		out, _ := json.Marshal(obj)
-		glog.V(3).Infof("Retrieved Ingress for Endpoint %v: %v", key, string(out))
+		if shouldLog {
+			out, _ := json.Marshal(obj)
+			glog.V(3).Infof("Retrieved Ingress for Endpoint %v: %v", key, string(out))
+		}
 		for _, ing := range ings {
 			ingEx := lbc.createIngress(&ing)
-			out, _ := json.Marshal(obj)
-			glog.V(3).Infof("Updating Endpoints for %v/%v with Ingress: %v", ing.Namespace, ing.Name, string(out))
+			if shouldLog {
+				out, _ := json.Marshal(obj)
+				glog.V(3).Infof("Updating Endpoints for %v/%v with Ingress: %v", ing.Namespace, ing.Name, string(out))
+			}
 			name := ing.Namespace + "-" + ing.Name
 			lbc.cnf.UpdateEndpoints(name, &ingEx)
 		}
 	} else {
-		if key != "kube-system/kube-scheduler" && key != "kube-system/kube-controller-manager" {
+		if shouldLog {
 			glog.V(3).Infof("Endpoints %v does not exists", key)
 		}
 	}
