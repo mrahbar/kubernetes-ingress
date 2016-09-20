@@ -267,15 +267,19 @@ func (lbc *LoadBalancerController) syncEndp(key string) {
 		lbc.endpQueue.requeue(key, err)
 		return
 	}
-	glog.V(3).Infof("Retrieved Endpoint from store %v", json.Marshal(obj))
+
+	out, _ := json.Marshal(obj)
+	glog.V(3).Infof("Retrieved Endpoint from store %v", string(out))
 
 	if endpExists {
 		ings := lbc.getIngressForEndpoints(obj)
 
-		glog.V(3).Infof("Retrieved Ingress for Endpoint %v: %v", key, json.Marshal(ings))
+		out, _ := json.Marshal(obj)
+		glog.V(3).Infof("Retrieved Ingress for Endpoint %v: %v", key, string(out))
 		for _, ing := range ings {
 			ingEx := lbc.createIngress(&ing)
-			glog.V(3).Infof("Updating Endpoints for %v/%v with Ingress: %v", ing.Namespace, ing.Name, json.Marshal(ingEx))
+			out, _ := json.Marshal(obj)
+			glog.V(3).Infof("Updating Endpoints for %v/%v with Ingress: %v", ing.Namespace, ing.Name, string(out))
 			name := ing.Namespace + "-" + ing.Name
 			lbc.cnf.UpdateEndpoints(name, &ingEx)
 		}
