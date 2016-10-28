@@ -182,10 +182,15 @@ func (nginx *NginxController) Reload() error {
 
 // Start starts NGINX
 func (nginx *NginxController) Start() {
-	glog.V(3).Info("Starting nginx")
-	if err := shellOut("nginx"); err != nil {
-		glog.Fatalf("Failed to start nginx: %s", err)
+	if _, err := os.Stat("/var/run/nginx.pid"); os.IsNotExist(err) {
+		glog.V(3).Info("Starting nginx")
+		if err := shellOut("nginx"); err != nil {
+			glog.Fatalf("Failed to start nginx: %s", err)
+		}
+	} else {
+		glog.V(3).Info("Start of nginx. Already running.")
 	}
+
 }
 
 func (nginx *NginxController) createCertsDir() {

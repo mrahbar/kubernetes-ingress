@@ -29,12 +29,16 @@ func NewConfigurator(nginx *NginxController, config *Config) *Configurator {
 	return &cnf
 }
 
+// UpdateEndpoints updates endpoints in NGINX configuration for an Ingress resource
+func (cnf *Configurator) UpdateEndpoints(name string, ingEx *IngressEx) {
+	cnf.AddOrUpdateIngress(name, ingEx)
+}
+
 // AddOrUpdateIngress adds or updates NGINX configuration for an Ingress resource
 func (cnf *Configurator) AddOrUpdateIngress(name string, ingEx *IngressEx) {
 	cnf.lock.Lock()
 	defer cnf.lock.Unlock()
 
-	glog.V(3).Infof("AddOrUpdateIngress from IngressEx: \n%v", ingEx)
 	pems := cnf.updateCertificates(ingEx)
 	nginxCfg := cnf.generateNginxCfg(ingEx, pems)
 	glog.V(3).Infof("Generated IngressNginxConfig: \n%v", nginxCfg)
@@ -263,11 +267,6 @@ func (cnf *Configurator) DeleteIngress(name string) {
 	if err := cnf.nginx.Reload(); err != nil {
 		glog.Errorf("Error when removing ingress %q: %q", name, err)
 	}
-}
-
-// UpdateEndpoints updates endpoints in NGINX configuration for an Ingress resource
-func (cnf *Configurator) UpdateEndpoints(name string, ingEx *IngressEx) {
-	cnf.AddOrUpdateIngress(name, ingEx)
 }
 
 // UpdateConfig updates NGINX Configuration parameters
