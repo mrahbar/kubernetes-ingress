@@ -1,3 +1,5 @@
+{{$labels := .Labels}}
+
 {{range $upstream := .Upstreams}}
 upstream {{$upstream.Name}} {
 	{{range $server := $upstream.UpstreamServers}}
@@ -8,28 +10,34 @@ upstream {{$upstream.Name}} {
 server {
 	listen 80;
 	{{if $server.SSL}}
-	listen 443 ssl;
-	ssl_certificate {{$server.SSLCertificate}};
-	ssl_certificate_key {{$server.SSLCertificateKey}};
+        listen 443 ssl;
+        ssl_certificate {{$server.SSLCertificate}};
+        ssl_certificate_key {{$server.SSLCertificateKey}};
+        if ($scheme = http) {
+                return 301 https://$host$request_uri;
+        }
+	{{else}}
+        {{if $labels.FAKESSL | eq "TRUE"}}
+        if ($http_X_ISSSL != 'TRUE') {
+                return 301 https://$host$request_uri;
+        }
+        {{end}}
 	{{end}}
 
 	{{if $server.Name}}
 	server_name {{$server.Name}};
 	{{end}}
 
-	{{if $server.SSL}}
-	if ($scheme = http) {
-		return 301 https://$host$request_uri;
-	}
-	{{end}}
 
 	{{range $location := $server.Locations}}
 	location {{$location.Path}} {
 		proxy_http_version 1.1;
+
 		{{if $location.Websocket}}
 		proxy_set_header Upgrade $http_upgrade;
 		proxy_set_header Connection $connection_upgrade;
 		{{end}}
+
 		proxy_connect_timeout {{$location.ProxyConnectTimeout}};
 		proxy_read_timeout {{$location.ProxyReadTimeout}};
 		client_max_body_size {{$location.ClientMaxBodySize}};

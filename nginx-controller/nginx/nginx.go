@@ -23,6 +23,7 @@ type NginxController struct {
 type IngressNginxConfig struct {
 	Upstreams []Upstream
 	Servers   []Server
+	Labels  map[string]string
 }
 
 // Upstream describes an NGINX upstream
@@ -77,7 +78,7 @@ func NewNginxController(nginxConfPath string, templatePath string) (*NginxContro
 	ngxc := NginxController{
 		nginxConfdPath: path.Join(nginxConfPath, "conf.d"),
 		nginxCertsPath: path.Join(nginxConfPath, "ssl"),
-		templatePath:          templatePath,
+		templatePath:   templatePath,
 	}
 
 	ngxc.createCertsDir()

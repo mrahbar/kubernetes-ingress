@@ -68,7 +68,8 @@ func (cnf *Configurator) updateCertificates(ingEx *IngressEx) map[string]string 
 			continue
 		}
 
-		pemFileName := cnf.nginx.AddOrUpdateCertAndKey(secretName, string(cert), string(key))
+		name := ingEx.Ingress.Namespace + "-" + secretName
+		pemFileName := cnf.nginx.AddOrUpdateCertAndKey(name, string(cert), string(key))
 
 		for _, host := range tls.Hosts {
 			pems[host] = pemFileName
@@ -80,12 +81,15 @@ func (cnf *Configurator) updateCertificates(ingEx *IngressEx) map[string]string 
 
 	return pems
 }
+
 func (cnf *Configurator) generateNginxCfg(ingEx *IngressEx, pems map[string]string) IngressNginxConfig {
 	ingCfg := cnf.createConfig(ingEx)
 
 	upstreams := make(map[string]Upstream)
 
 	wsServices := getWebsocketServices(ingEx)
+
+	labels := ingEx.Ingress.ObjectMeta.Labels
 
 	if ingEx.Ingress.Spec.Backend != nil {
 		name := getNameForUpstream(ingEx.Ingress, emptyHost, ingEx.Ingress.Spec.Backend.ServiceName)
@@ -163,7 +167,7 @@ func (cnf *Configurator) generateNginxCfg(ingEx *IngressEx, pems map[string]stri
 		servers = append(servers, server)
 	}
 
-	return IngressNginxConfig{Upstreams: upstreamMapToSlice(upstreams), Servers: servers}
+	return IngressNginxConfig{Upstreams: upstreamMapToSlice(upstreams), Servers: servers, Labels: labels}
 }
 
 func (cnf *Configurator) createConfig(ingEx *IngressEx) Config {
