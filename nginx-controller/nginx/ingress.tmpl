@@ -17,7 +17,7 @@ server {
                 return 301 https://$host$request_uri;
         }
 	{{else}}
-        {{if $labels.FAKESSL | eq "TRUE"}}
+        {{if index $labels "FAKESSL" | eq "FALSE"}}
         if ($http_X_ISSSL != 'TRUE') {
                 return 301 https://$host$request_uri;
         }
