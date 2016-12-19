@@ -122,7 +122,7 @@ func (cnf *Configurator) generateNginxCfg(ingEx *IngressEx, pems map[string]stri
 		rootLocation := false
 
 		for _, path := range rule.HTTP.Paths {
-			upsName := getNameForUpstream(ingEx.Ingress, rule.Host, path.Backend.ServiceName, ingEx.Ingress.Spec.Backend.ServicePort.String())
+			upsName := getNameForUpstream(ingEx.Ingress, rule.Host, path.Backend.ServiceName, path.Backend.ServicePort.String())
 
 			if _, exists := upstreams[upsName]; !exists {
 				upstream := cnf.createUpstream(ingEx, upsName, &path.Backend, ingEx.Ingress.Namespace)
