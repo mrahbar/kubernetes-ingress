@@ -92,7 +92,7 @@ func (cnf *Configurator) generateNginxCfg(ingEx *IngressEx, pems map[string]stri
 	labels := ingEx.Ingress.ObjectMeta.Labels
 
 	if ingEx.Ingress.Spec.Backend != nil {
-		name := getNameForUpstream(ingEx.Ingress, emptyHost, ingEx.Ingress.Spec.Backend.ServiceName)
+		name := getNameForUpstream(ingEx.Ingress, emptyHost, ingEx.Ingress.Spec.Backend.ServiceName, ingEx.Ingress.Spec.Backend.ServicePort.String())
 		upstream := cnf.createUpstream(ingEx, name, ingEx.Ingress.Spec.Backend, ingEx.Ingress.Namespace)
 		upstreams[name] = upstream
 	}
@@ -122,7 +122,7 @@ func (cnf *Configurator) generateNginxCfg(ingEx *IngressEx, pems map[string]stri
 		rootLocation := false
 
 		for _, path := range rule.HTTP.Paths {
-			upsName := getNameForUpstream(ingEx.Ingress, rule.Host, path.Backend.ServiceName)
+			upsName := getNameForUpstream(ingEx.Ingress, rule.Host, path.Backend.ServiceName, ingEx.Ingress.Spec.Backend.ServicePort.String())
 
 			if _, exists := upstreams[upsName]; !exists {
 				upstream := cnf.createUpstream(ingEx, upsName, &path.Backend, ingEx.Ingress.Namespace)
@@ -138,7 +138,7 @@ func (cnf *Configurator) generateNginxCfg(ingEx *IngressEx, pems map[string]stri
 		}
 
 		if rootLocation == false && ingEx.Ingress.Spec.Backend != nil {
-			upsName := getNameForUpstream(ingEx.Ingress, emptyHost, ingEx.Ingress.Spec.Backend.ServiceName)
+			upsName := getNameForUpstream(ingEx.Ingress, emptyHost, ingEx.Ingress.Spec.Backend.ServiceName, ingEx.Ingress.Spec.Backend.ServicePort.String())
 			loc := createLocation(pathOrDefault("/"), upstreams[upsName], &ingCfg, wsServices[ingEx.Ingress.Spec.Backend.ServiceName])
 			locations = append(locations, loc)
 		}
@@ -158,7 +158,7 @@ func (cnf *Configurator) generateNginxCfg(ingEx *IngressEx, pems map[string]stri
 
 		var locations []Location
 
-		upsName := getNameForUpstream(ingEx.Ingress, emptyHost, ingEx.Ingress.Spec.Backend.ServiceName)
+		upsName := getNameForUpstream(ingEx.Ingress, emptyHost, ingEx.Ingress.Spec.Backend.ServiceName, ingEx.Ingress.Spec.Backend.ServicePort.String())
 
 		loc := createLocation(pathOrDefault("/"), upstreams[upsName], &ingCfg, wsServices[ingEx.Ingress.Spec.Backend.ServiceName])
 		locations = append(locations, loc)
@@ -248,8 +248,8 @@ func endpointsToUpstreamServers(endps api.Endpoints, servicePort int) []Upstream
 	return upsServers
 }
 
-func getNameForUpstream(ing *extensions.Ingress, host string, service string) string {
-	return fmt.Sprintf("%v-%v-%v-%v", ing.Namespace, ing.Name, host, service)
+func getNameForUpstream(ing *extensions.Ingress, host string, service string, port string) string {
+	return fmt.Sprintf("%v-%v-%v-%v-%v", ing.Namespace, ing.Name, host, service, port)
 }
 
 func upstreamMapToSlice(upstreams map[string]Upstream) []Upstream {
